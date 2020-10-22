@@ -3,12 +3,32 @@ public class Action {
 
     private double time;
     private int action;
+    private int destination;
+    private int origin;
 
-    public Action(double time, int action) {
+    public Action(double time, int action, int origin, int destination) {
 
         this.time = time;
         this.action = action;
+        this.destination = destination;
+        this.origin = origin;
 
+    }
+
+    public int getDestination() {
+        return destination;
+    }
+
+    public int getOrigin() {
+        return origin;
+    }
+
+    public void setDestination(int destination) {
+        this.destination = destination;
+    }
+
+    public void setOrigin(int origin) {
+        this.origin = origin;
     }
 
     public double getTime() {
@@ -29,11 +49,11 @@ public class Action {
 
     public String toString() {
         if (action == 0)
-            return "{S - " + time + "}";
+            return "{S" + origin + " - " + time + "}";
         if (action == 1)
-            return "{C - " + time + "}";
+            return "{C" + origin + " - " + time + "}";
 
-        return "{P - " + time + "}";
+        return "{P" + origin + "" + destination + " - " + time + "}";
 
     }
 }

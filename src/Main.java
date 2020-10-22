@@ -1,100 +1,109 @@
-import java.util.Random;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.io.File; 
+import java.util.Scanner; 
 
 public class Main {
 
-    private static Scheduler scheduler = new Scheduler();
-    private static double[] random;
-    private static int randomCounter;
-    private static double initialState;
+    private static ArrayList<Queue> queues;
+    private static Scheduler scheduler;
+    private static double[] initialState;
 
-    private static int m = 100000;
+    public static void main(String args[]) throws FileNotFoundException {
 
-    public static void main(String args[]) {
+        File file = new File("./model.txt");
+        Scanner reader = new Scanner(file);
 
-        // random = new double[m];
-        // Random rdn = new Random();
-        // for (int i = 0; i < random.length; i++) {
-        // random[i] = rdn.nextDouble();
-        // }
+        int m = Integer.parseInt(reader.nextLine());
 
-        random = generateNumbers(Math.pow(2, 64), m, 2, 7);
+        
+        String[] initialStatesData = reader.nextLine().split(",");
+        initialState = new double[initialStatesData.length];
+        
+        for (int i = 0; i < initialStatesData.length; i++) {
+            initialState[i] = Double.parseDouble(initialStatesData[i]);
+        }
+        
+        queues = new ArrayList();
 
-        randomCounter = 0;
+        for (int i = 0; reader.hasNextLine(); i++) {
 
-        initialState = 2.5;
-        // capacity servers minArrival maxArrival minExit maxExit
-        Queue fila = new Queue(random, 2, 3, 2, 3, 2, 5);
-        Queue fila2 = new Queue(random, 1, 3, 0, 0, 3, 5);
+            String[] lineData = reader.nextLine().split(",");
+            String[] connectionsData = reader.nextLine().split(",");
 
-        scheduler.addAction(initialState, 1);
+            double[] connections = new double[connectionsData.length];
+            for (int j = 0; j < initialStatesData.length; j++) {
+                connections[j] = Double.parseDouble(connectionsData[j]);
+            }
 
-        for (Action action = scheduler.nextAction(); randomCounter < m; action = scheduler.nextAction()) {
+            queues.add(new Queue(i, Integer.parseInt(lineData[0]), Integer.parseInt(lineData[1]), Integer.parseInt(lineData[2]), Integer.parseInt(lineData[3]), Integer.parseInt(lineData[4]), Integer.parseInt(lineData[5]), connections));
 
-            fila.saveTime(action.getTime());
-            fila2.saveTime(action.getTime());
+        }
 
+        // Generator rdn = new Generator(1103515245.0, m, 12345.0, 1.0);
+
+        Generator rdn = new Generator(new double[] {0.2176, 0.0103, 0.1109, 0.3456, 0.9910, 0.2323, 0.9211, 0.0322, 0.1211, 0.5131, 0.7208, 0.9172, 0.9922, 0.8324, 0.5011, 0.2931});
+
+        scheduler = new Scheduler();
+
+        for (int i = 0; i < initialState.length; i++) {
+            if (initialState[i]!=0) scheduler.addAction(initialState[i], 1, -1, i);
+        }
+
+        for (Action action = scheduler.nextAction(); rdn.index() < rdn.size(); action = scheduler.nextAction()) {
+
+            for (Queue line : queues) {
+                line.saveTime(action.getTime());
+            }
             if (action.getAction() == 1) {
-                randomCounter = fila.chegada(randomCounter, scheduler);
-                scheduler = fila.getScheduler();
+                for (Queue line : queues) {
+                    if (line.isInitial()) {
+                        scheduler = line.chegada(rdn, scheduler);
+                        rdn = line.getGenerator();
+                    }
+                }
+
             } else if (action.getAction() == 0) {
-                randomCounter = fila2.saida(randomCounter, scheduler);
-                scheduler = fila2.getScheduler();
+                Queue line = queues.get(action.getOrigin());
+                scheduler = line.saida(rdn, scheduler);
+                rdn = line.getGenerator();
             } else {
-                randomCounter = fila.saidaPassagem(randomCounter, scheduler);
-                scheduler = fila.getScheduler();
-                randomCounter = fila2.chegadaPassagem(randomCounter, scheduler);
-                scheduler = fila2.getScheduler();
+                Queue origin = queues.get(action.getOrigin());
+                Queue destination = queues.get(action.getDestination());
+                scheduler = origin.saida(rdn, scheduler);
+                rdn = origin.getGenerator();
+                scheduler = destination.chegada(rdn, scheduler);
+                rdn = destination.getGenerator();
             }
 
         }
 
-        System.out.println("Final State 1:");
-        System.out.printf("%-20s %s\n", "Time", "Percentage");
-        for (int i = 0; i < fila.getState().length; i++) {
-            System.out.printf("%-20s %s\n", format(fila.getState()[i]),
-                    format((fila.getState()[i] / fila.getTime()) * 100) + "%");
+        System.out.println("\n\nResultados da Simulação\n");
+        System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
+
+        for (Queue line : queues) {
+            System.out.println("Fila " + line.getIndex() + " - G/G/" + line.getServers() + "/" + line.getCapacity());
+            
+            if (line.getMinArrival()==0 && line.getMaxArrival()==0) System.out.printf("%-20s %s\n", "Chegada", "Inexistente");
+            else System.out.printf("%-20s %s\n", "Chegada", (line.getMinArrival() + " ... " + line.getMaxArrival()));
+
+
+            System.out.printf("%-20s %s\n\n", "Atendimento", (line.getMinExit() + " ... " + line.getMaxExit()));
+            System.out.printf("%-20s %-20s %s\n", "Estado", "Tempo", "Porcentagem");
+
+            for (int i = 0; i < line.getState().size(); i++) {
+                System.out.printf("%-20s %-20s %s\n",i , (format((double)line.getState().get(i))  + " ut"), format(((double)line.getState().get(i) / line.getTime()) * 100) + "%");
+            }
+            System.out.printf("%-20s %-20s %s\n", "Total", (format(line.getTime()) + " ut"), "100%");
+            
+            System.out.printf("\nNúmero de Perdas: " + line.getLosses() + "\n\n");
+            System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
+            
         }
-        System.out.printf("%-20s %s\n", format(fila.getTime()), "100%");
 
-        System.out.println("\nLosses:");
-        System.out.printf("%-20s %s\n", "Number", "Percentage");
-        System.out.printf("%-20s %s\n", fila.getLosses(), format((double) fila.getLosses() / (double) m * 100) + "%");
-
-        System.out.println("\n\n\nFinal State 2:");
-        System.out.printf("%-20s %s\n", "Time", "Percentage");
-        for (int i = 0; i < fila2.getState().length; i++) {
-            System.out.printf("%-20s %s\n", format(fila2.getState()[i]),
-                    format((fila2.getState()[i] / fila2.getTime()) * 100) + "%");
-        }
-        System.out.printf("%-20s %s\n", format(fila2.getTime()), "100%");
-    }
-
-    public static String print(double[] vetor) {
-        String text = "";
-
-        for (int i = 0; i < vetor.length; i++) {
-            text = text + format(vetor[i]) + ", ";
-        }
-        return text;
-
-    }
-
-    public static double[] generateNumbers(double a, int m, double x, double c) {
-        double number = x;
-
-        double list[] = new double[m];
-
-        for (int index = 0; index < m; index++) {
-            double result = (a * number + c) % m;
-
-            list[index] = (result / m);
-            number = result;
-        }
-        return list;
     }
 
     public static double format(double number) {
-        return Math.floor(number * 100) / 100;
+        return Math.floor(number * 1000) / 1000;
     }
-
 }

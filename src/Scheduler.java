@@ -8,9 +8,12 @@ public class Scheduler {
         scheduler = new ArrayList();
     }
 
-    public void addAction(double time, int action) {
-        Action item = new Action(time, action);
+    public boolean isEmpty() {
+        return scheduler.isEmpty();
+    }
 
+    public void addAction(double time, int action, int origin, int destination) {
+        Action item = new Action(time, action, origin, destination);
         scheduler.add(item);
     }
 
