@@ -1,0 +1,12 @@
+Para executar com a sua própria simulação,
+crie um arquivo no formato .txt com os seguintes valores nas linhas indicadas.
+
+Linha 1: número de aleatórios que serão gerados [M]
+Linha 2: semente que irá gerar os números pseudo-aleatórios [a]
+Linha 3: número a ser adicionado ao gerar os números aleatórios [C]
+Linha 4: valor inicial dos números aleatórios [semente]
+Linha 5: valores que serão agendadas as primeiras chegadas nas filas. Inserir 0.0 caso não possua um primerio agendamento) [primeiraChegadaFila0, primeiraChegadaFila1,(...)]
+Linha 6: dados de uma fila, separados por virgulas e indicando as seguintes informações [servidores,capacidade,minArrival,maxArrival,minService,maxService]
+Linha 7: dados de probablidade de roteamento para cada uma das filas [probabilidadeFila0,probabilidadeFila1,(...)]
+Linha n: repetir linha 6 até que todas as filas estejam adicionadas
+Linha n+1: repetir linha 7 até que todos os roteamentos estejam adicionados
